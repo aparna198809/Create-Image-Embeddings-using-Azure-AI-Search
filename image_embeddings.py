@@ -28,8 +28,8 @@ from azure.search.documents.indexes.models import (
     VectorSearchProfile,
     HnswAlgorithmConfiguration,
 )
+from azure.search.documents.models import VectorizedQuery
 from azure.ai.inference import EmbeddingsClient
-from azure.core.credentials import AzureKeyCredential as InferenceKeyCredential
 
 
 class AzureSearchIndexManager:
@@ -407,10 +407,18 @@ class ImageEmbeddingPipeline:
         video_name = os.path.basename(video_path)
         
         for (frame, frame_num, timestamp), embedding in zip(frames_data, embeddings):
-            doc_id = f"{video_name}_{frame_num}"
+            # Generate unique document ID
+            doc_id = f"{video_name}_{frame_num}_{int(timestamp * 1000)}"
+            
+            # Determine image path
+            if output_dir:
+                image_full_path = os.path.join(output_dir, f"frame_{frame_num:06d}.jpg")
+            else:
+                image_full_path = f"{video_path}#frame_{frame_num}"
+            
             document = {
                 "id": doc_id,
-                "image_path": output_dir if output_dir else video_path,
+                "image_path": image_full_path,
                 "frame_number": frame_num,
                 "timestamp": timestamp,
                 "video_source": video_name,
@@ -422,8 +430,19 @@ class ImageEmbeddingPipeline:
         print(f"Uploading {len(documents)} documents to index...")
         result = self.search_client.upload_documents(documents)
         
-        uploaded_ids = [doc_id for doc_id, status in 
-                        zip([d["id"] for d in documents], result)]
+        # Check for failures
+        uploaded_ids = []
+        failed_ids = []
+        for doc, upload_result in zip(documents, result):
+            if upload_result.succeeded:
+                uploaded_ids.append(doc["id"])
+            else:
+                failed_ids.append((doc["id"], upload_result.error_message))
+        
+        if failed_ids:
+            print(f"Warning: {len(failed_ids)} documents failed to upload:")
+            for doc_id, error in failed_ids[:5]:  # Show first 5 errors
+                print(f"  - {doc_id}: {error}")
         
         print(f"Successfully uploaded {len(uploaded_ids)} documents.")
         return uploaded_ids
@@ -446,14 +465,17 @@ class ImageEmbeddingPipeline:
         # Generate embedding for query image
         query_embedding = self.embedding_generator.generate_embedding(query_image)
         
+        # Create vector query
+        vector_query = VectorizedQuery(
+            vector=query_embedding,
+            k_nearest_neighbors=top_k,
+            fields="embedding"
+        )
+        
         # Perform vector search
         results = self.search_client.search(
             search_text=None,
-            vector_queries=[{
-                "vector": query_embedding,
-                "k_nearest_neighbors": top_k,
-                "fields": "embedding",
-            }],
+            vector_queries=[vector_query],
             select=["id", "image_path", "frame_number", "timestamp", "video_source"],
         )
         
@@ -480,9 +502,9 @@ def load_config_from_env() -> Dict[str, str]:
     
     # Validate required fields
     required_fields = ["search_endpoint", "search_key", "inference_endpoint", "inference_key"]
-    missing = [field for field in required_fields if not config.get(field)]
+    missing_fields = [field for field in required_fields if not config.get(field)]
     
-    if missing:
-        raise ValueError(f"Missing required environment variables: {', '.join(missing)}")
+    if missing_fields:
+        raise ValueError(f"Missing required environment variables: {', '.join(missing_fields)}")
     
     return config
