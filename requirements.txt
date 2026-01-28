@@ -1,0 +1,7 @@
+azure-ai-inference
+azure-identity
+azure-search-documents
+opencv-python
+Pillow
+numpy
+python-dotenv
