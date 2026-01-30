@@ -141,8 +141,6 @@ generator = ImageEmbeddingGenerator(
     credential=AzureKeyCredential("your_key")
 )
 
-
-
 ### Search Similar Images
 
 ```python
