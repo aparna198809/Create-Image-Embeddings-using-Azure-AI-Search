@@ -29,7 +29,7 @@ from azure.search.documents.indexes.models import (
     HnswAlgorithmConfiguration,
 )
 from azure.search.documents.models import VectorizedQuery
-from azure.ai.inference import EmbeddingsClient
+from azure.ai.inference import EmbeddingsClient,ImageEmbeddingsClient
 
 
 class AzureSearchIndexManager:
@@ -255,7 +255,7 @@ class ImageEmbeddingGenerator:
         self.endpoint = endpoint
         self.credential = credential
         self.client = ImageEmbeddingsClient(endpoint=endpoint, credential=credential,deployment_name =model_name)
-        self.text_client = ImageEmbeddingsClient(endpoint=endpoint, credential=credential,deployment_name =model_name)
+        self.text_client = EmbeddingsClient(endpoint=endpoint, credential=credential,deployment_name =model_name)
         
     def image_to_base64(self, image: np.ndarray) -> str:
         """
