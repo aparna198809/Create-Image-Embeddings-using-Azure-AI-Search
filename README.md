@@ -154,7 +154,6 @@ results = pipeline.search_similar_images(input_query, top_k=5)
 
 for result in results:
     print(f"Video: {result['file_name']}")
-    print(f"Timestamp: {result['created_at']:.2f}s")
     print(f"Score: {result['@search.score']}")
 ```
 
