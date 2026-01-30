@@ -152,7 +152,6 @@ import cv2
 input_query = read(user_query)
 embedding = generator.generate_embedding(input_query)
 
-```
 results = pipeline.search_similar_images(input_query, top_k=5)
 
 for result in results:
