@@ -67,32 +67,33 @@ class AzureSearchIndexManager:
                 searchable=False,
                 filterable=True,
             ),
-            SearchField(
-                name="file_path",
+             SearchField(
+                name="image_path",
                 type=SearchFieldDataType.String,
                 searchable=True,
                 filterable=True,
             ),
             SearchField(
-                name="file_name",
+                name="frame_number",
                 type=SearchFieldDataType.Int32,
                 searchable=False,
                 filterable=True,
                 sortable=True,
             ),
             SearchField(
-                name="created_at",
+                name="timestamp",
                 type=SearchFieldDataType.Double,
                 searchable=False,
                 filterable=True,
                 sortable=True,
             ),
             SearchField(
-                name="image_format",
+                name="video_source",
                 type=SearchFieldDataType.String,
                 searchable=True,
                 filterable=True,
             ),
+
             SearchField(
                 name="embedding",
                 type=SearchFieldDataType.Collection(SearchFieldDataType.Single),
