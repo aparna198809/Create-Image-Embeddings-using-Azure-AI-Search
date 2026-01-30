@@ -141,14 +141,7 @@ generator = ImageEmbeddingGenerator(
     credential=AzureKeyCredential("your_key")
 )
 
-# Generate embedding for a single image
-image = cv2.imread("path/to/image.jpg")
-embedding = generator.generate_embedding(image)
 
-# Batch processing
-images = [cv2.imread(f"frame_{i}.jpg") for i in range(10)]
-embeddings = generator.generate_embeddings_batch(images, batch_size=5)
-```
 
 ### Search Similar Images
 
@@ -156,8 +149,11 @@ embeddings = generator.generate_embeddings_batch(images, batch_size=5)
 import cv2
 
 # Search for similar images
-query_image = cv2.imread("query.jpg")
-results = pipeline.search_similar_images(query_image, top_k=5)
+input_query = read(user_query)
+embedding = generator.generate_embedding(input_query)
+
+```
+results = pipeline.search_similar_images(input_query, top_k=5)
 
 for result in results:
     print(f"Video: {result['video_source']}")
