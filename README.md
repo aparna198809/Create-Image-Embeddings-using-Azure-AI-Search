@@ -153,9 +153,8 @@ embedding = generator.generate_embedding(input_query)
 results = pipeline.search_similar_images(input_query, top_k=5)
 
 for result in results:
-    print(f"Video: {result['video_source']}")
-    print(f"Frame: {result['frame_number']}")
-    print(f"Timestamp: {result['timestamp']:.2f}s")
+    print(f"Video: {result['file_name']}")
+    print(f"Timestamp: {result['created_at']:.2f}s")
     print(f"Score: {result['@search.score']}")
 ```
 
