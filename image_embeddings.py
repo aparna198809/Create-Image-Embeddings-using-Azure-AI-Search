@@ -17,7 +17,7 @@ from io import BytesIO
 import cv2
 import numpy as np
 from PIL import Image
-from azure.identity import DefaultAzureCredential, AzureKeyCredential
+from azure.identity import DefaultAzureCredential
 from azure.search.documents import SearchClient
 from azure.search.documents.indexes import SearchIndexClient
 from azure.search.documents.indexes.models import (
@@ -68,27 +68,27 @@ class AzureSearchIndexManager:
                 filterable=True,
             ),
             SearchField(
-                name="image_path",
+                name="file_path",
                 type=SearchFieldDataType.String,
                 searchable=True,
                 filterable=True,
             ),
             SearchField(
-                name="frame_number",
+                name="file_name",
                 type=SearchFieldDataType.Int32,
                 searchable=False,
                 filterable=True,
                 sortable=True,
             ),
             SearchField(
-                name="timestamp",
+                name="created_at",
                 type=SearchFieldDataType.Double,
                 searchable=False,
                 filterable=True,
                 sortable=True,
             ),
             SearchField(
-                name="video_source",
+                name="image_format",
                 type=SearchFieldDataType.String,
                 searchable=True,
                 filterable=True,
@@ -244,7 +244,7 @@ class VideoFrameExtractor:
 class ImageEmbeddingGenerator:
     """Generates image embeddings using Azure AI Inference."""
     
-    def __init__(self, endpoint: str, credential):
+    def __init__(self, endpoint: str, credential, deployment_name : str):
         """
         Initialize the image embedding generator.
         
@@ -254,8 +254,9 @@ class ImageEmbeddingGenerator:
         """
         self.endpoint = endpoint
         self.credential = credential
-        self.client = EmbeddingsClient(endpoint=endpoint, credential=credential)
-    
+        self.client = ImageEmbeddingsClient(endpoint=endpoint, credential=credential,deployment_name =model_name)
+        self.text_client = ImageEmbeddingsClient(endpoint=endpoint, credential=credential,deployment_name =model_name)
+        
     def image_to_base64(self, image: np.ndarray) -> str:
         """
         Convert OpenCV image (numpy array) to base64 string.
@@ -276,7 +277,7 @@ class ImageEmbeddingGenerator:
         
         return base64.b64encode(image_bytes).decode('utf-8')
     
-    def generate_embedding(self, image: np.ndarray) -> List[float]:
+    def generate_embedding(self, query: str) -> List[float]:
         """
         Generate embedding for a single image.
         
@@ -287,12 +288,15 @@ class ImageEmbeddingGenerator:
             Embedding vector as list of floats
         """
         # Convert image to base64
-        image_base64 = self.image_to_base64(image)
+        image_base64 = self.image_to_base64(query)
         
         # Generate embedding
-        response = self.client.embed(
-            input=[{"image": image_base64}],
+        response = self.text_client.embed(
+            input=[{query: str}],
         )
+        
+        return response.data[0].embedding
+
         
         return response.data[0].embedding
     
@@ -447,9 +451,9 @@ class ImageEmbeddingPipeline:
         print(f"Successfully uploaded {len(uploaded_ids)} documents.")
         return uploaded_ids
     
-    def search_similar_images(
+   def search_similar_images(
         self,
-        query_image: np.ndarray,
+        query: str,
         top_k: int = 5,
     ) -> List[Dict]:
         """
@@ -463,7 +467,7 @@ class ImageEmbeddingPipeline:
             List of search results
         """
         # Generate embedding for query image
-        query_embedding = self.embedding_generator.generate_embedding(query_image)
+        query_embedding = self.embedding_generator.generate_embedding(query)
         
         # Create vector query
         vector_query = VectorizedQuery(
@@ -480,6 +484,7 @@ class ImageEmbeddingPipeline:
         )
         
         return [result for result in results]
+
 
 
 def load_config_from_env() -> Dict[str, str]:
