@@ -1,4 +1,4 @@
-# Create Image Embeddings using Azure AI Search
+# Create Image Embeddings using Azure AI Search and cohere embed model 
 
 This repository provides reusable Python code for creating image embeddings from videos and storing them in Azure AI Search. It enables semantic search over video frames using Azure's AI services.
 
